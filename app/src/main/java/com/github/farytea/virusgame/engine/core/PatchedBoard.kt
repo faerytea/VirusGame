@@ -5,7 +5,7 @@ import com.github.farytea.virusgame.engine.core.IBoard.Companion.transform
 
 class PatchedBoard(
     val base: Board,
-    val patch: MutableMap<Coord, Cell> = HashMap()
+    val patch: LinkedHashMap<Coord, Cell> = LinkedHashMap()
 ): IBoard {
     override val cols: Int
         get() = base.cols
@@ -21,6 +21,15 @@ class PatchedBoard(
     }
     override fun step(coord: Coord, player: Player) {
         set(coord, transform(player, get(coord)) ?: throw WrongStepException(player, coord))
+    }
+
+    fun revertPatch(amount: Int = 1) {
+        val it = patch.entries.iterator()
+        for (i in 1..amount) {
+            if (!it.hasNext()) break
+            it.next()
+            it.remove()
+        }
     }
 
     fun applyPatch() {

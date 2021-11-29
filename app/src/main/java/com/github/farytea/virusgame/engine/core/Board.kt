@@ -4,26 +4,27 @@ import java.io.EOFException
 import java.nio.ByteBuffer
 
 class Board(
-    val data: Array<Cell>,
-    override val rows: Int,
-    override val cols: Int,
+    data: Array<Cell>,
+    rows: Int,
+    cols: Int,
 ): IBoard {
     init {
-        if (
-            cols <= 0
-            || rows <= 0
-            || cols * rows != data.size
-        ) throw IllegalArgumentException("There is no board $rows x $cols with ${data.size} cells!")
+        if (cols <= 0 || rows <= 0)
+            throw IllegalArgumentException("Zero board is not a valid board")
     }
 
-    override operator fun get(h: Int, v: Int): Cell {
-        checkBorders(h, v)
-        return data[h * cols + v]
-    }
+    private val array = Array2D(data, rows, cols)
+    override val rows: Int
+        get() = array.rows
+    override val cols: Int
+        get() = array.cols
+    val data
+        get() = array.data
+
+    override operator fun get(h: Int, v: Int): Cell = array[h, v]
 
     override operator fun set(h: Int, v: Int, c: Cell) {
-        checkBorders(h, v)
-        data[h * cols + v] = c
+        array[h, v] = c
     }
 
     override fun isOutside(h: Int, v: Int) = h !in 0 until rows || v !in 0 until cols

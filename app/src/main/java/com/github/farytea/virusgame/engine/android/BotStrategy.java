@@ -9,4 +9,5 @@ import com.github.farytea.virusgame.engine.core.Player;
 public interface BotStrategy {
     @NonNull
     Coord[] move(@NonNull GameEngine engine, @NonNull Player me);
+    void gameOver(boolean victory);
 }

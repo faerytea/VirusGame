@@ -4,7 +4,18 @@ sealed class Cell {
     abstract val marker: Char
     abstract val since: Version
 
-    sealed class Owned(val owner: String) : Cell()
+    override fun equals(other: Any?): Boolean =
+            other != null
+                    && other::class.java == this::class.java
+                    && (other as Cell).marker == marker
+
+    override fun hashCode(): Int = marker.code
+
+    sealed class Owned(val owner: String) : Cell() {
+        override fun equals(other: Any?): Boolean = super.equals(other) && this.owner == (other as Owned).owner
+
+        override fun hashCode(): Int = super.hashCode() and (owner.hashCode() shl 8)
+    }
 
     class Cross(owner: String) : Owned(owner) {
         override val marker
@@ -34,6 +45,8 @@ sealed class Cell {
             get() = '_'
         override val since: Version
             get() = INITIAL_CELLS_RELEASE
+
+        override fun equals(other: Any?): Boolean = other === this
     }
 
     companion object {

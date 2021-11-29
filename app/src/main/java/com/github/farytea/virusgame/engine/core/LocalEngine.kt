@@ -20,30 +20,39 @@ class LocalEngine(val board: Board, val players: MutableList<Player>) : GameEngi
         validateInternal(player, m1, m2, m3)?.applyPatch()
             ?: throw IllegalArgumentException("One of $m1 $m2 $m3 isn't legal")
         val lastPlayer = currentPlayer
-        for (c in board.data) if (c is Cell.Fort) c.connected = null
+        val lastPlayerNo = playerNo
+        clearConnectionStatus()
         render?.notifyCommit(board, players, playerNo, arrayOf(m1, m2, m3))
-        if (++playerNo == players.size) playerNo = 0
-        val listIterator = players.listIterator(playerNo)
-        while (listIterator.hasNext()) {
-            val i = listIterator.nextIndex()
-            val next = listIterator.next()
-            if (findPossibleMoves(next).firstOrNull() == null) {
+        playerNo = nextPlayerNo(playerNo)
+
+        var cpn = playerNo
+        while (playerNo != lastPlayerNo) {
+            val cp = players[cpn]
+            if (findPossibleMoves(cp).firstOrNull() == null) {
                 render?.let {
-                    if (players.size > 1)
-                        it.notifyLosing(next)
+                    if (players.size > 1) {
+                        it.notifyLosing(cp)
+                        cp.gameOver(false)
+                    }
                 }
-                listIterator.remove()
-                if (i < playerNo) --playerNo
+                players.removeAt(cpn)
+                if (cpn < playerNo) --playerNo
+                if (cpn >= players.size) cpn = 0
             } else {
                 break
             }
         }
+
         if (players.isEmpty()) players += lastPlayer
         else if (players.size >= 2) currentPlayer.notifyTurn(this)
 
-        if (players.size == 1)
+        if (players.size == 1 && players[0] == lastPlayer) {
             render?.notifyVictory(lastPlayer)
+            lastPlayer.gameOver(true)
+        }
     }
+
+    private fun nextPlayerNo(current: Int): Int = (current + 1).let { if (it == players.size) 0 else it }
 
     override fun findPossibleMoves(player: Player): Sequence<Array<Coord>> =
         sequence { // get alive cells
@@ -99,6 +108,7 @@ class LocalEngine(val board: Board, val players: MutableList<Player>) : GameEngi
         }
 
     private fun validateInternal(player: Player, vararg moves: Coord): PatchedBoard? {
+        clearConnectionStatus()
         val patched = PatchedBoard(board)
         for (move in moves) {
             when (val cell = patched[move]) {
@@ -123,8 +133,23 @@ class LocalEngine(val board: Board, val players: MutableList<Player>) : GameEngi
         board: IBoard,
         h: Int,
         v: Int,
+        player: Player
+    ): Boolean {
+        val visited = HashSet<Coord>()
+        return isConnected(board, h, v, player, visited).also {
+            for (c in visited) {
+                val cell = board[c]
+                if (cell is Cell.Fort) cell.connected = it
+            }
+        }
+    }
+
+    private fun isConnected(
+        board: IBoard,
+        h: Int,
+        v: Int,
         player: Player,
-        visited: MutableSet<Coord> = HashSet()
+        visited: MutableSet<Coord>
     ): Boolean {
         val coord = Coord(h, v)
         if (coord in visited) return false
@@ -136,8 +161,10 @@ class LocalEngine(val board: Board, val players: MutableList<Player>) : GameEngi
                     true -> return true
                     null -> {
                         val isConnected = isConnected(board, ch, cv, player, visited)
-                        cell.connected = isConnected
-                        return isConnected
+                        if (isConnected) {
+                            cell.connected = isConnected
+                            return true
+                        }
                     }
                 }
                 else -> { /* ignore */
@@ -145,5 +172,9 @@ class LocalEngine(val board: Board, val players: MutableList<Player>) : GameEngi
             }
         }
         return false
+    }
+
+    private fun clearConnectionStatus() {
+        for (c in board.data) if (c is Cell.Fort) c.connected = null
     }
 }

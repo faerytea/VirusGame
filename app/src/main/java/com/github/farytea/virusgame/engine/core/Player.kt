@@ -5,4 +5,5 @@ abstract class Player(val id: String) {
     val cross = Cell.Cross(id)
     val fort = Cell.Fort(id)
     abstract fun notifyTurn(engine: GameEngine)
+    open fun gameOver(victory: Boolean) = Unit
 }

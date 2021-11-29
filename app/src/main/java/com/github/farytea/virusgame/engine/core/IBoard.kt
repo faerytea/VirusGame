@@ -24,14 +24,20 @@ interface IBoard {
         }
 
         inline fun IBoard.forEachNeighbour(h: Int, v: Int, action: (ch: Int, cv: Int, Cell) -> Unit) {
-            if (!isOutside(h-1, v-1)) action(h-1, v-1, get(h-1, v-1))
-            if (!isOutside(h-1, v)) action(h-1, v, get(h-1, v))
-            if (!isOutside(h-1, v+1)) action(h-1, v+1, get(h-1, v+1))
-            if (!isOutside(h, v-1)) action(h, v-1, get(h, v-1))
-            if (!isOutside(h, v+1)) action(h, v+1, get(h, v+1))
-            if (!isOutside(h+1, v-1)) action(h+1, v-1, get(h+1, v-1))
-            if (!isOutside(h+1, v)) action(h+1, v, get(h+1, v))
-            if (!isOutside(h+1, v+1)) action(h+1, v+1, get(h+1, v+1))
+            doIfInside(h-1, v-1, action)
+            doIfInside(h-1, v, action)
+            doIfInside(h-1, v+1, action)
+            doIfInside(h, v-1, action)
+//            doIfInside(h, v, action)
+            doIfInside(h, v+1, action)
+            doIfInside(h+1, v-1, action)
+            doIfInside(h+1, v, action)
+            doIfInside(h+1, v+1, action)
+        }
+
+        inline fun IBoard.doIfInside(h: Int, v: Int, action: (ch: Int, cv: Int, Cell) -> Unit) {
+            if (!isOutside(h, v))
+                action(h, v, get(h, v))
         }
     }
 }
